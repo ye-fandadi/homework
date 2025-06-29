@@ -113,6 +113,83 @@ weather_tool = StructuredTool.from_function(
     description="查询城市天气",
     args_schema=WeatherInput
 )
+
+# ----------------------------
+# 知识库工具
+# ----------------------------
+def setup_knowledge_base_tool(pdf_path: str):
+    class KnowledgeInput(BaseModel):
+        query: str = Field(description="要查询的知识点")
+
+    if not os.path.exists(pdf_path):
+        return StructuredTool.from_function(
+            func=lambda x: "❌ 错误：知识库文档不存在。",
+            name="KnowledgeBaseQueryTool",
+            description="用于从知识库 PDF 文档中回答问题（当前文档未找到）。",
+            args_schema=KnowledgeInput
+        )
+
+    try:
+        loader = PyPDFLoader(pdf_path)
+        documents = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        texts = text_splitter.split_documents(documents)
+
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        db = FAISS.from_documents(texts, embeddings)
+        retriever = db.as_retriever()
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=ChatDeepSeek(api_key=os.getenv("DEEPSEEK_API_KEY")),
+            chain_type="stuff",
+            retriever=retriever
+        )
+
+        return StructuredTool.from_function(
+            func=qa_chain.run,
+            name="KnowledgeBaseQueryTool",
+            description="用于从知识库 PDF 文档中回答问题。",
+            args_schema=KnowledgeInput
+        )
+    except Exception as e:
+        return StructuredTool.from_function(
+            func=lambda x: f"❌ 错误：知识库加载失败: {e}",
+            name="KnowledgeBaseQueryTool",
+            description="知识库问答工具初始化失败。",
+            args_schema=KnowledgeInput
+        )
+
+
+# ----------------------------
+# Agent 构建
+# ----------------------------
+def create_agent():
+    llm = ChatDeepSeek(
+        model="deepseek-chat",
+        api_key=os.getenv("DEEPSEEK_API_KEY"),
+        temperature=0.3
+    )
+
+    # ✅ 这里要改成你真实的文件名
+    pdf_path = "./docs/the_history_of_ship.pdf"
+    knowledge_tool = setup_knowledge_base_tool(pdf_path)
+
+    tools = [calculator_tool, weather_tool, knowledge_tool]
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        return_messages=True
+    )
+
+    agent = initialize_agent(
+        tools=tools,
+        llm=llm,
+        memory=memory,
+        agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        handle_parsing_errors=True
+    )
+    return agent
+
+
 # ----------------------------
 # CLI 主程序
 # ----------------------------
@@ -138,4 +215,3 @@ if __name__ == "__main__":
             print(f"\n🧠 回复结果:\n{result['output']}")
         except Exception as e:
             print(f"\n❌ 错误：{e}")
-
