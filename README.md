@@ -133,32 +133,22 @@ Content-Type: application/json
 Body: {"query": "你的问题"}
 示例请求：
 查询天气：
-bash
-复制
-编辑
+
 curl -X POST http://localhost:8000/chat \
 -H "Content-Type: application/json" \
 -d '{"query": "上海天气如何？"}'
-数据分析：
-bash
-复制
-编辑
-curl -X POST http://localhost:8000/chat \
--H "Content-Type: application/json" \
--d '{"query": "请降序排序并分析数据：3, 7, 1, 9"}'
+
 知识库问答：
-bash
-复制
-编辑
+
 curl -X POST http://localhost:8000/chat \
 -H "Content-Type: application/json" \
--d '{"query": "PDF 文档中介绍了什么是 LangChain 吗？"}'
+-d '{"query": "轮船是何时出现的？？"}'
 6. 🤝 合作与分工
 姓名	主要负责内容
-牛正武	系统整体设计，知识库工具构建，LangChain 集成，FastAPI 服务部署，README 编写
-孙世纪	工具开发（天气 + 数据分析），Agent 调试，代码测试，文档补充，Git 协作
+庄鹏程	系统整体设计，知识库工具构建，LangChain 集成，FastAPI 服务部署，README 编写
+李思远	工具开发（天气 + 数据分析），Agent 调试，代码测试，文档补充，Git 协作
 
-🙋 牛正武的反思
+🙋 李思远的反思
 深入理解了 Agent 的核心结构（LLM、工具、记忆、链）；
 
 学会了 LangChain 工具调用机制；
@@ -167,7 +157,7 @@ curl -X POST http://localhost:8000/chat \
 
 部署 API 时，dotenv 的加载和路径问题曾卡住，后规范处理。
 
-🙋 孙世纪的反思
+🙋 庄鹏程的反思
 掌握了将天气 API 集成为 Agent 工具；
 
 熟悉了自定义工具的数据处理逻辑与用户输入解析；
